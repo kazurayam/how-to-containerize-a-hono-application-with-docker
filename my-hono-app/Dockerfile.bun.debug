@@ -1,0 +1,30 @@
+# Use the official Bun image
+FROM oven/bun:1-alpine
+
+# Inside the container, create a working directory /app
+WORKDIR /app
+
+# Create non-root user
+RUN apk add --no-cache --update shadow \
+ && groupadd -r appgroup \
+ && useradd -r -M -g appgroup appuser
+
+# Copy dependency files
+COPY package.json ./
+COPY tsconfig.json ./
+COPY bun.lock ./
+COPY src ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile --production
+
+# Copy application source
+COPY . .
+
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+EXPOSE 3000
+
+# Run directly with Bun (no build step needed for TypeScript)
+CMD ["bun", "run", "src/index.ts"]
