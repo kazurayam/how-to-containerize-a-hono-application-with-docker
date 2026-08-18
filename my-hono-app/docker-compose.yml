@@ -1,0 +1,37 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.bun
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://hono:secret@postgres:5432/honodb
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["/bin/bash", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+postgres:
+  image: postgres:16-alpine
+  environment:
+    POSTGRES_USER: hono
+    POSTGRES_PASSWORD: secret
+    POSTGRES_DB: honodb
+  volumes:
+    - pgdata: /var/lib/postgresql/data
+  healthcheck:
+    test: ["/bin/bash", "pg_isready -U hono"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+
+values:
+  pgdata
+
